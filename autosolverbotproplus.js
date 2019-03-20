@@ -44,11 +44,13 @@ var markOn = function(x, y) {
 
 var initSolver = function()
 {
+    console.log("init")
     grabGameInit()
+    dump()
 }
 
 var solveStep = function() {
-
+    console.log('step')
 }
 
 
@@ -57,3 +59,24 @@ var createRiskMap = function(board) {
     var riskMap = [];
     
 }
+
+var tileClicked = function(event) {
+    console.log("clicked: ", event)
+    solveStep()
+} 
+
+// når siden ER loaded
+window.addEventListener('load', function(event){
+
+    initSolver()
+
+    document.querySelector("#new-game").addEventListener('click', function(event){
+        initSolver()
+    })
+    
+    // inject click on gameBoard tiles
+    for (let tile of document.querySelectorAll('#minesweeper td')) {
+        tile.addEventListener("click", tileClicked)
+    }
+})
+
