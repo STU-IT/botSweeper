@@ -1,30 +1,20 @@
 ﻿console.log("Hej");
 
-// function dump() {
-//     for (var row in minesweeper.rows) {
-//         for (var cell in row) {
-//             console.log(cell.innerText)
-//         }
-//     }
-// }
-
 var gameBoard= [];
 numBombs = bombs.value;
 
-function grab() {
+function grabGameInit() {
+    numBombs = bombs.value;
+    grabBoard();
+}
+
+function grabBoard() {
     for (var i = 0; i < minesweeper.rows.length; i++) {
         gameBoard[i] = []
         for (var j = 0; j < minesweeper.rows[i].cells.length; j++) {
-            //console.log(i, j, minesweeper.rows[i].cells[j].innerText)
             gameBoard[i][j] = minesweeper.rows[i].cells[j].innerText;
-
-            // test
-            //minesweeper.rows[i].cells[j].dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, button: 2}))
-            minesweeper.rows[i].cells[j].click();
         }
     }
-
-    numBombs = bombs.value;
 }
 
 function dump() {
@@ -32,14 +22,38 @@ function dump() {
     console.log(gameBoard)
 }
 
-var ev3 = new MouseEvent("contextmenu", {
-    bubbles: true,
-    cancelable: false,
-    view: window,
-    button: 2,
-    buttons: 0,
-    clientX: 3,
-    clientY: 2
-});
+// var ev3 = new MouseEvent("contextmenu", {
+//     bubbles: true,
+//     cancelable: false,
+//     view: window,
+//     button: 2,
+//     buttons: 0,
+//     clientX: 3,
+//     clientY: 2
+// });
 
-minesweeper.rows[1].cells[1].dispatchEvent(ev3)
+// minesweeper.rows[1].cells[1].dispatchEvent(ev3)
+
+var stepOn = function(x, y) {
+    minesweeper.rows[x].cells[y].dispatchEvent(new MouseEvent("click", { bubbles: true}))
+}
+
+var markOn = function(x, y) {
+    minesweeper.rows[x].cells[y].dispatchEvent(new MouseEvent("contextmenu", { bubbles: true}))
+}
+
+var initSolver = function()
+{
+    grabGameInit()
+}
+
+var solveStep = function() {
+
+}
+
+
+
+var createRiskMap = function(board) {
+    var riskMap = [];
+    
+}
