@@ -95,8 +95,10 @@ var createRiskMap = function(board) {
 };
 
 var tileClicked = function(event) {
-    console.log("clicked: ", event)
-    solveStep()
+    console.log("clicked: ", event);
+    // vi skal have en forsinkelse for at spillets egne kode kan nå at behandle mussekliket
+    var timerID = window.setTimeout(solveStep, 200);
+    //solveStep()
 } ;
 
 // når siden ER loaded
