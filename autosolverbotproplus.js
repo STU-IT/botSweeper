@@ -64,7 +64,7 @@ var solveStep = function() {
 
 var getNeighbours = function(x,y) {
     var neighbours = [];
-    // add neighbours counterclockwise, from top
+    // add neighbours counterclockwise, from top (= north N), and a round
     if (x > 0)
         neighbours.push(gameBoard[y][x-1]);     // N
     if (x > 0 && y > 0)
