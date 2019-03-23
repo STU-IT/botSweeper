@@ -42,11 +42,13 @@ function dump() {
 // minesweeper.rows[1].cells[1].dispatchEvent(ev3)
 
 var stepOn = function(x, y) {
-    minesweeper.rows[x].cells[y].dispatchEvent(new MouseEvent("click", { bubbles: true}));
+    minesweeper.rows[y].cells[x].dispatchEvent(new MouseEvent("click", { bubbles: true}));
 };
 
 var markOn = function(x, y) {
-    minesweeper.rows[x].cells[y].dispatchEvent(new MouseEvent("contextmenu", { bubbles: true}));
+    while (minesweeper.rows[y].cells[x].innerText != "!") {
+        minesweeper.rows[y].cells[x].dispatchEvent(new MouseEvent("contextmenu", { bubbles: true}));
+    }
 };
 
 var initSolver = function()
@@ -56,14 +58,99 @@ var initSolver = function()
     dump();
 };
 
+var createMarkedBombsMap = function(board) {
+    return board.map(r => r.filter(tile => tile.risk == 1).map(tile2 => {
+        markOn(tile2.x, tile2.y); //markOn(tile2.x, tile2.y);
+        tile2.capture = "!";
+        return tile2;
+    }));
+};
+
+var createReducedMap = function(board) {
+    var newMap = createMarkedBombsMap(board);
+    newMap = createRevealdMap(newMap);
+
+    board.map(r => r.filter(tile => tile.capture == "!").map(tile => {
+        getNeighbours(tile.x, tile.y)
+            .filter(n => n.revealed)
+            .map(tile => tile.nearBombs--);
+        return tile;
+    }));
+
+    board.map(r => r.filter(rev => rev.revealed).map(tile => {
+            getNeighbours(tile.x, tile.y)
+                .filter(n => !n.revealed).filter(nb => nb.capture != "!").map(unrev => 
+                    unrev.risk = (unrev.risk == undefined) ? 
+                        tile.nearBombs / tile.nUnrevealds :
+                    Math.min(unrev.risk, tile.nearBombs / tile.nUnrevealds) 
+                );
+            return tile;
+        }
+    ));
+    return newMap.map(r => r.map(tile => tile.capture));
+};
+
+var cretateGeneralRiskMap = function(board) {
+    var foundBombs = board.reduce(
+        (acc, curr) => acc + curr.filter(tile => tile.capture == "!").length, 0);
+    var noRevealedNeihbour = board.reduce(
+        (acc, curr) => acc + curr.filter(tile => !tile.revealed).filter(tile => tile.risk == undefined).length, 0);
+    var avgRisk = (numBombs - foundBombs) / noRevealedNeihbour;
+    return board.map(r => r.filter(tile => !tile.revealed).filter(tile => tile.risk == undefined)
+        .map(avgTile => avgTile.risk = avgRisk)
+    );
+};
+
+var safeClicks = function(board) {
+    return board.flat().filter(tile => tile.risk == 0)
+}
+
+var bestClick = function(board) {
+    var riskyTiles = riskyClicks(board);
+    //console.log("riskyTiles: ", riskyTiles);
+    var bestTiles = riskyTiles.filter(tile => tile.risk == riskyTiles[0].risk);
+    //console.log(bestTiles);
+    var r = Math.floor(Math.random() * bestTiles.length);
+    var bestTile = bestTiles[r];
+    return bestTile;
+}
+
+var riskyClicks = function(board) {
+    return board.flat().filter(tile => !tile.revealed).sort((t1, t2) => {
+        if (t1.risk < t2.risk) {
+            return -1;
+        }
+        else if(t1.risk > t2.risk) {
+            return 1;
+        } 
+        else 
+        {
+            return 0;
+        }
+    });
+};
+
 var solveStep = function() {
-    console.log('step');
+    //console.log('step');
     grabBoard();
     //dump();
     createRevealdMap(gameBoard);
     createRiskMap(gameBoard);
     // TODO reduce
+    createReducedMap(gameBoard);
+    //grabBoard();
     // TODO recreate riskmap?
+    // No
+    // TODO cretateGeneralRiskMap for tiles not touching any revealed tiles
+    cretateGeneralRiskMap(gameBoard);
+
+    //safeClicks(gameBoard);
+
+    //riskyClicks(gameBoard)
+
+    var bestTile = bestClick(gameBoard);
+    console.log("Bedste click", bestTile.x, bestTile.y, bestTile.risk)
+    stepOn(bestTile.x, bestTile.y);
 
 };
 
@@ -136,9 +223,9 @@ var createRevealdMap = function(board) {
 };
 
 var tileClicked = function(event) {
-    console.log("clicked: ", event);
+    //console.log("clicked: ", event);
     // vi skal have en forsinkelse for at spillets egne kode kan nå at behandle mussekliket
-    var timerID = window.setTimeout(solveStep, 200);
+    var timerID = window.setTimeout(solveStep, 800);
     //solveStep()
 } ;
 
