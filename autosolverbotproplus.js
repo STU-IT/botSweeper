@@ -1,4 +1,6 @@
-﻿console.log("Hej");
+﻿/*jshint esversion: 6 */
+
+console.log("Hej");
 
 var gameBoard= [];
 numBombs = bombs.value;
@@ -8,10 +10,10 @@ numBombs = bombs.value;
 // så kommer y koordinaten før x koordinaten. Det er altså omvendt!
 function grabBoard() {
     for (var y = 0; y < minesweeper.rows.length; y++) {
-        gameBoard[y] = []
+        gameBoard[y] = [];
         for (var x = 0; x < minesweeper.rows[y].cells.length; x++) {
-            gameBoard[y][x] = minesweeper.rows[y].cells[x].innerText;
-            // her    ^  ^         og her      ^        ^
+            gameBoard[y][x] = {capture: minesweeper.rows[y].cells[x].innerText, x: x, y: y};
+            // her    ^  ^         og her                ^        ^
         }
     }
 }
@@ -22,8 +24,8 @@ function grabGameInit() {
 }
 
 function dump() {
-    console.log("Bomber ", numBombs)
-    console.log(gameBoard)
+    console.log("Bomber ", numBombs);
+    console.log(gameBoard);
     
 }
 
@@ -40,25 +42,30 @@ function dump() {
 // minesweeper.rows[1].cells[1].dispatchEvent(ev3)
 
 var stepOn = function(x, y) {
-    minesweeper.rows[x].cells[y].dispatchEvent(new MouseEvent("click", { bubbles: true}))
-}
+    minesweeper.rows[x].cells[y].dispatchEvent(new MouseEvent("click", { bubbles: true}));
+};
 
 var markOn = function(x, y) {
-    minesweeper.rows[x].cells[y].dispatchEvent(new MouseEvent("contextmenu", { bubbles: true}))
-}
+    minesweeper.rows[x].cells[y].dispatchEvent(new MouseEvent("contextmenu", { bubbles: true}));
+};
 
 var initSolver = function()
 {
-    console.log("init")
-    grabGameInit()
-    dump()
-}
+    console.log("init");
+    grabGameInit();
+    dump();
+};
 
 var solveStep = function() {
-    console.log('step')
+    console.log('step');
     grabBoard();
-    dump();
-}
+    //dump();
+    createRevealdMap(gameBoard);
+    createRiskMap(gameBoard);
+    // TODO reduce
+    // TODO recreate riskmap?
+
+};
 
 
 
@@ -90,8 +97,42 @@ var getNeighbours = function(x,y) {
 
 
 var createRiskMap = function(board) {
-    var riskMap = [];
-    
+    board.map(r => r.map(t => t.risk = undefined));
+    var rMap = board.map(
+        r => r.map(
+            tile => {
+                if (tile.revealed) {
+                    tile.nearBombs = Number(tile.capture);
+                    tile.neighbours = getNeighbours(tile.x, tile.y);
+                    tile.unrevealds = tile.neighbours.filter(neighbour => !neighbour.revealed);
+                    tile.nUnrevealds = tile.unrevealds.length;
+                    tile.unrevealds.map(unrev => 
+                        unrev.risk = (unrev.risk == undefined) ? 
+                            tile.nearBombs / tile.nUnrevealds :
+                            Math.max(unrev.risk, tile.nearBombs / tile.nUnrevealds) 
+                            
+                    );
+                }
+                return tile;
+            }
+        )
+    );
+    return rMap.map(r => r.map(tile => tile.risk));
+};
+
+var createRevealdMap = function(board) {
+    var rMap = board.map(
+        r => r.map(
+            tile => {
+                tile.revealed = !( tile.capture.charCodeAt(0) == 160 || 
+                    tile.capture == "?" || 
+                    tile.capture == "!"
+                );
+                return tile .revealed;
+            }
+        )
+    );
+    return rMap;
 };
 
 var tileClicked = function(event) {
@@ -104,19 +145,19 @@ var tileClicked = function(event) {
 // når siden ER loaded
 window.addEventListener('load', function(event){
 
-    initSolver()
+    initSolver();
 
     document.querySelector("#new-game").addEventListener('click', function(event){
-        initSolver()
+        initSolver();
         // inject click on gameBoard tiles
         for (let tile of document.querySelectorAll('#minesweeper td')) {
-            tile.addEventListener("click", tileClicked)
+            tile.addEventListener("click", tileClicked);
         }
-    }, {capture: false})
+    }, {capture: false});
     
     for (let tile of document.querySelectorAll('#minesweeper td')) {
-        tile.addEventListener("click", tileClicked, {capture: false})
+        tile.addEventListener("click", tileClicked, {capture: false});
     }
     
-})
+});
 
